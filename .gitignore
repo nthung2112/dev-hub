@@ -5,3 +5,10 @@ build/
 .ai-ignored/
 .cursor/
 .DS_Store
+.env
+.env.*
+secrets.toml
+.streamlit/secrets.toml
+node_modules/
+__pycache__/
+showcase/*.bak.*

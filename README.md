@@ -4,11 +4,30 @@ title: "Dev Hub"
 
 # Dev Hub
 
-A macOS notch app with one tab:
+[![CI](https://github.com/nthung2112/dev-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/nthung2112/dev-hub/actions/workflows/ci.yml)
+[![macOS](https://img.shields.io/badge/macOS-14%2B-000000.svg)](https://www.apple.com/macos/)
+
+A macOS notch app for local machine utilities, with no sign-in and nothing leaving the machine.
 
 - **Mac** holds machine utilities that run as you, none of which need admin rights: keep awake, Pomodoro, displays, port lookup, Finder and Desktop switches, screenshot and recording settings, power and disk, dev cache cleanup, and network speed and addresses.
 
 More tabs can be added without touching the shell.
+
+## Showcase
+
+![Dev Hub panel](showcase/panel.png)
+
+The notch panel, light and dark.
+
+![Dev Hub panel dark](showcase/panel-dark.png)
+
+The Mac tab's settings page.
+
+![Dev Hub settings](showcase/settings-mac.png)
+
+![Dev Hub CLI demo](showcase/demo.gif)
+
+The `devhub` CLI: status, and the JSON dump of a tab's snapshot.
 
 ## What it shows
 
@@ -113,3 +132,6 @@ Tests never call a network service. The Mac tab's parsers are tested against mad
 | `Tests/DevHubTests/` | Unit tests |
 | `scripts/build-app.sh` | Builds and installs the `.app` bundle |
 | `scripts/devhub` | Launcher: start, stop, status, install, dump |
+| `scripts/setup.sh` | Checks the toolchain, builds, runs the tests |
+| `scripts/capture.sh` | Renders the showcase images from the app |
+| `scripts/demo.tape` | VHS tape for the CLI demo |
