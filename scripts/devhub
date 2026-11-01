@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Global launcher for Dev Hub. Symlink into a PATH directory, e.g.:
+#   ln -sf "$PWD/scripts/devhub" ~/bin/devhub
+set -euo pipefail
+
+APP="$HOME/Applications/DevHub.app"
+REPO="$(cd "$(dirname "$(realpath "$0")")/.." && pwd)"
+
+is_running() { pgrep -x DevHub >/dev/null; }
+
+start() {
+  if [[ ! -d "$APP" ]]; then
+    echo "DevHub.app is not installed. Run: devhub install" >&2
+    exit 1
+  fi
+  if is_running; then
+    echo "Dev Hub is already running."
+  else
+    open "$APP"
+    echo "Dev Hub started. Look for its icon in the menu bar."
+  fi
+}
+
+stop() {
+  if is_running; then
+    pkill -x DevHub
+    echo "Dev Hub stopped."
+  else
+    echo "Dev Hub is not running."
+  fi
+}
+
+case "${1:-start}" in
+  start|open) start ;;
+  stop|quit) stop ;;
+  restart)
+    stop
+    sleep 1
+    start
+    ;;
+  status)
+    if is_running; then echo "running (pid $(pgrep -x DevHub))"; else echo "not running"; fi
+    ;;
+  install|update)
+    "$REPO/scripts/build-app.sh" --install
+    start
+    ;;
+  dump)
+    shift
+    if [[ ! -x "$APP/Contents/MacOS/DevHub" ]]; then
+      echo "DevHub.app is not installed. Run: devhub install" >&2
+      exit 1
+    fi
+    "$APP/Contents/MacOS/DevHub" --dump "$@"
+    ;;
+  help|-h|--help)
+    cat <<EOF
+Usage: devhub [command]
+
+  start          Launch Dev Hub (default)
+  stop           Quit it
+  restart        Quit and launch again
+  status         Show whether it is running
+  install        Rebuild from $REPO, reinstall, and launch
+  dump [tab]     Print the tabs' snapshots as JSON (tabs: utilities; all by default)
+EOF
+    ;;
+  *)
+    echo "Unknown command: $1 (try: devhub help)" >&2
+    exit 1
+    ;;
+esac
