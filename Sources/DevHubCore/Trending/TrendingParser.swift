@@ -31,7 +31,7 @@ public enum TrendingParser {
             language: text(in: block, pattern: #"<span itemprop="programmingLanguage"[^>]*>(.*?)</span>"#),
             stars: number(in: block, pattern: #"href="/[^"]+/stargazers"[^>]*>(.*?)</a>"#),
             forks: number(in: block, pattern: #"href="/[^"]+/forks"[^>]*>(.*?)</a>"#),
-            starsToday: number(in: block, pattern: #"([\d,]+)\s+stars today"#)
+            starsInPeriod: number(in: block, pattern: #"([\d,]+)\s+stars\s+(today|this week|this month)"#)
         )
     }
 

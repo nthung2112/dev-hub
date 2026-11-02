@@ -2,9 +2,15 @@ import AppKit
 import SwiftUI
 import DevHubCore
 
-/// The Trending tab: the repositories on GitHub's trending page, newest first.
+/// The Trending tab: the repositories on GitHub's trending page, for the chosen language and period.
 struct TrendingView: View {
     @ObservedObject var tab: TabState
+    @State private var filter: TrendingFilter
+
+    init(tab: TabState) {
+        self.tab = tab
+        _filter = State(initialValue: TrendingSettings.filter(defaults: tab.store.settings.defaults))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -18,16 +24,38 @@ struct TrendingView: View {
     }
 
     private var toolbar: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text("GitHub trending").font(.system(size: 13, weight: .semibold))
             Text("github.com/trending").font(.caption2).foregroundStyle(.secondary)
-            Spacer()
-            if let detail = tab.detail(TrendingDetail.self) {
-                Text("\(detail.repos.count) repos")
-                    .font(.caption2).foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Picker("Language", selection: Binding(
+                get: { filter.language },
+                set: { language in filter.language = language; apply() }
+            )) {
+                ForEach(TrendingLanguage.allCases) { Text($0.title).tag($0) }
             }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .fixedSize()
+            .controlSize(.small)
+            Picker("Period", selection: Binding(
+                get: { filter.since },
+                set: { since in filter.since = since; apply() }
+            )) {
+                ForEach(TrendingSince.allCases) { Text($0.title).tag($0) }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .fixedSize()
+            .controlSize(.small)
         }
         .padding(.horizontal, 2)
+    }
+
+    /// Saves the filter and loads the page for it.
+    private func apply() {
+        filter = TrendingSettings.save(filter, defaults: tab.store.settings.defaults)
+        tab.store.refresh(tab: tab)
     }
 
     @ViewBuilder private var content: some View {
@@ -35,7 +63,7 @@ struct TrendingView: View {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(detail.repos.enumerated()), id: \.element.id) { index, repo in
                     if index > 0 { RowDivider() }
-                    TrendingRow(repo: repo, rank: index + 1) { tab.store.open(repo.url) }
+                    TrendingRow(repo: repo, rank: index + 1, period: filter.since.periodPhrase) { tab.store.open(repo.url) }
                 }
             }
             .background(Color.primary.opacity(0.035))
@@ -55,6 +83,7 @@ struct TrendingView: View {
 private struct TrendingRow: View {
     let repo: TrendingRepo
     let rank: Int
+    let period: String
     let open: () -> Void
     @State private var hovering = false
 
@@ -85,22 +114,22 @@ private struct TrendingRow: View {
                             .help("Language: \(language)")
                     }
                     if let stars = repo.stars {
-                        Label(stars.formatted(), systemImage: "star")
+                        Label(TrendingFormat.count(stars), systemImage: "star")
                             .font(.caption2).foregroundStyle(.secondary)
                             .labelStyle(LabelIconStyle())
                             .help("Total stars")
                     }
                     if let forks = repo.forks {
-                        Label(forks.formatted(), systemImage: "tuningfork")
+                        Label(TrendingFormat.count(forks), systemImage: "tuningfork")
                             .font(.caption2).foregroundStyle(.secondary)
                             .labelStyle(LabelIconStyle())
                             .help("Forks")
                     }
-                    if let today = repo.starsToday {
-                        Label("\(today.formatted()) today", systemImage: "arrow.up.right")
+                    if let gained = repo.starsInPeriod {
+                        Label("\(TrendingFormat.count(gained)) \(period)", systemImage: "arrow.up.right")
                             .font(.caption2).foregroundStyle(.green)
                             .labelStyle(LabelIconStyle())
-                            .help("Stars today")
+                            .help("Stars \(period)")
                     }
                     Spacer(minLength: 0)
                 }

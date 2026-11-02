@@ -42,7 +42,14 @@ import Testing
         #expect(repo.language == "Swift")
         #expect(repo.stars == 12345)
         #expect(repo.forks == 678)
-        #expect(repo.starsToday == 90)
+        #expect(repo.starsInPeriod == 90)
+    }
+
+    @Test func readsTheStarsGainedOverThePeriod() {
+        for phrase in ["today", "this week", "this month"] {
+            let html = Self.html.replacingOccurrences(of: "90 stars today", with: "90 stars \(phrase)")
+            #expect(TrendingParser.parse(html).first?.starsInPeriod == 90)
+        }
     }
 
     @Test func skipsBlocksWithoutARepositoryName() {
@@ -52,16 +59,44 @@ import Testing
     }
 
     @Test func theMonitorReadsThePageAndNeverFails() async throws {
-        let monitor = TrendingMonitor(load: { Data(Self.html.utf8) })
+        let monitor = TrendingMonitor(filter: TrendingFilter(), load: { _ in Data(Self.html.utf8) })
         let snapshot = try await monitor.refresh()
         #expect(snapshot.status == .clean)
-        #expect(snapshot.summary == "Trending: 1 repos · 90 stars today")
+        #expect(snapshot.summary == "Trending: 1 repo · 90 stars today")
         let detail = snapshot.detail as? TrendingDetail
         #expect(detail?.repos.count == 1)
     }
 
     @Test func anEmptyPageIsAnError() async {
-        let monitor = TrendingMonitor(load: { Data("<html></html>".utf8) })
+        let monitor = TrendingMonitor(filter: TrendingFilter(), load: { _ in Data("<html></html>".utf8) })
         await #expect(throws: TrendingError.self) { try await monitor.refresh() }
+    }
+
+    @Test func theFilterBuildsThePageUrl() {
+        #expect(TrendingFilter(language: .typescript, since: .weekly).url.absoluteString
+                == "https://github.com/trending/typescript?since=weekly")
+        #expect(TrendingFilter(language: .all, since: .monthly).url.absoluteString
+                == "https://github.com/trending?since=monthly")
+        #expect(TrendingFilter(language: .rust, since: .daily).url.absoluteString
+                == "https://github.com/trending/rust?since=daily")
+    }
+
+    @Test func theFilterIsSavedAndReadBack() {
+        let defaults = UserDefaults(suiteName: "local.devhub.tests.trending")!
+        defaults.removePersistentDomain(forName: "local.devhub.tests.trending")
+        #expect(TrendingSettings.filter(defaults: defaults) == TrendingFilter(language: .all, since: .daily))
+        TrendingSettings.save(TrendingFilter(language: .go, since: .monthly), defaults: defaults)
+        #expect(TrendingSettings.filter(defaults: defaults) == TrendingFilter(language: .go, since: .monthly))
+        defaults.removePersistentDomain(forName: "local.devhub.tests.trending")
+    }
+
+    @Test func theSummaryNamesTheLanguageAndPeriod() {
+        let repos = [TrendingRepo(owner: "octo", name: "example", starsInPeriod: 90)]
+        #expect(TrendingMonitor.summary(repos, filter: TrendingFilter(language: .all, since: .daily))
+                == "Trending: 1 repo · 90 stars today")
+        #expect(TrendingMonitor.summary(repos, filter: TrendingFilter(language: .typescript, since: .weekly))
+                == "Trending TypeScript: 1 repo · 90 stars this week")
+        #expect(TrendingMonitor.summary(repos, filter: TrendingFilter(language: .rust, since: .monthly))
+                == "Trending Rust: 1 repo · 90 stars this month")
     }
 }

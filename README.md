@@ -10,7 +10,7 @@ title: "Dev Hub"
 A macOS notch app for local machine utilities, with no sign-in and nothing leaving the machine.
 
 - **Mac** holds machine utilities that run as you, none of which need admin rights: keep awake, Pomodoro, displays, port lookup, Finder and Desktop switches, screenshot and recording settings, power and disk, dev cache cleanup, and network speed and addresses.
-- **Trending** lists the repositories on [github.com/trending](https://github.com/trending), parsed from the public page.
+- **Trending** lists the repositories on [github.com/trending](https://github.com/trending), parsed from the public page. Two pickers filter by language (All, TypeScript, JavaScript, Python, Java, Go, Rust) and by period (Daily, Weekly, Monthly).
 
 More tabs can be added without touching the shell.
 
@@ -57,7 +57,8 @@ The `devhub` CLI: status, and the JSON dump of a tab's snapshot.
   - **Dev caches:** the size of the Xcode, Yarn and Gradle caches, and a button to clear them.
   - **Network:** the current speed in and out, the local IP address, the Wi-Fi name and your SSH public key, each with a copy button, plus a speed test.
 - **Trending tab** (github.com/trending):
-  - The repositories on the page, in the order it lists them: the rank, `owner/name`, the description, the language, total stars, forks and the stars gained today. Click a row to open the repository on GitHub.
+  - The repositories on the page, in the order it lists them: the rank, `owner/name`, the description, the language, total stars, forks and the stars gained over the period. Click a row to open the repository on GitHub.
+  - **Language** picks All languages, TypeScript, JavaScript, Python, Java, Go or Rust. **Period** picks Daily, Weekly or Monthly. The pair sets the page that is read, e.g. `github.com/trending/typescript?since=weekly`, and is remembered between launches.
 
 ## Requirements
 

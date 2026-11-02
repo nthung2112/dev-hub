@@ -1,34 +1,41 @@
 import Foundation
 
-/// The Trending tab: the repositories on GitHub's trending page. It reads the public page, so it
-/// needs no sign-in and no token; the tab never turns red and never sends a banner.
+/// The Trending tab: the repositories on GitHub's trending page, for the saved language and
+/// period. It reads the public page, so it needs no sign-in and no token; the tab never turns red
+/// and never sends a banner.
 public struct TrendingMonitor: Monitor {
     public let id = "trending"
     public let title = "Trending"
-    private let load: @Sendable () async throws -> Data
+    private let filter: TrendingFilter
+    private let load: @Sendable (URL) async throws -> Data
 
     public init(defaults: UserDefaults) {
-        self.init()
+        self.init(filter: TrendingSettings.filter(defaults: defaults))
     }
 
-    init(load: @escaping @Sendable () async throws -> Data = { try await TrendingPage.load() }) {
+    init(filter: TrendingFilter = TrendingFilter(),
+         load: @escaping @Sendable (URL) async throws -> Data = { try await TrendingPage.load(url: $0) }) {
+        self.filter = filter
         self.load = load
     }
 
     public func refresh() async throws -> MonitorSnapshot {
-        let html = String(decoding: try await load(), as: UTF8.self)
+        let html = String(decoding: try await load(filter.url), as: UTF8.self)
         let repos = TrendingParser.parse(html)
         guard !repos.isEmpty else { throw TrendingError.noRepositories }
         let detail = TrendingDetail(repos: repos, fetchedAt: Date())
-        return MonitorSnapshot(status: .clean, fetchedAt: detail.fetchedAt, summary: Self.summary(repos), scope: "trending", detail: detail)
+        return MonitorSnapshot(status: .clean, fetchedAt: detail.fetchedAt, summary: Self.summary(repos, filter: filter),
+                               scope: "trending:\(filter.language.rawValue):\(filter.since.rawValue)", detail: detail)
     }
 
-    /// `Trending: 25 repos · 1,526 stars today`
-    public static func summary(_ repos: [TrendingRepo]) -> String {
-        let today = repos.compactMap(\.starsToday).reduce(0, +)
-        return today > 0
-            ? "Trending: \(repos.count) repos · \(today.formatted()) stars today"
-            : "Trending: \(repos.count) repos"
+    /// `Trending: 25 repos · 1,526 stars today`, `Trending TypeScript: 1 repo · 5,852 stars this week`
+    public static func summary(_ repos: [TrendingRepo], filter: TrendingFilter) -> String {
+        let total = repos.compactMap(\.starsInPeriod).reduce(0, +)
+        let head = filter.language == .all ? "Trending" : "Trending \(filter.language.title)"
+        let count = TrendingFormat.repos(repos.count)
+        return total > 0
+            ? "\(head): \(count) · \(TrendingFormat.count(total)) stars \(filter.since.periodPhrase)"
+            : "\(head): \(count)"
     }
 }
 
@@ -48,7 +55,7 @@ public enum TrendingError: LocalizedError {
 public enum TrendingPage {
     public static let url = URL(string: "https://github.com/trending")!
 
-    public static func load() async throws -> Data {
+    public static func load(url: URL = TrendingPage.url) async throws -> Data {
         var request = URLRequest(url: url)
         request.setValue("text/html", forHTTPHeaderField: "Accept")
         request.setValue("DevHub/1.0 (macOS)", forHTTPHeaderField: "User-Agent")
