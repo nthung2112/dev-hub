@@ -10,6 +10,7 @@ title: "Dev Hub"
 A macOS notch app for local machine utilities, with no sign-in and nothing leaving the machine.
 
 - **Mac** holds machine utilities that run as you, none of which need admin rights: keep awake, Pomodoro, displays, port lookup, Finder and Desktop switches, screenshot and recording settings, power and disk, dev cache cleanup, and network speed and addresses.
+- **Trending** lists the repositories on [github.com/trending](https://github.com/trending), parsed from the public page.
 
 More tabs can be added without touching the shell.
 
@@ -55,6 +56,8 @@ The `devhub` CLI: status, and the JSON dump of a tab's snapshot.
   - **Power & screen:** the battery's charge, state and time remaining, free disk space, and quick actions.
   - **Dev caches:** the size of the Xcode, Yarn and Gradle caches, and a button to clear them.
   - **Network:** the current speed in and out, the local IP address, the Wi-Fi name and your SSH public key, each with a copy button, plus a speed test.
+- **Trending tab** (github.com/trending):
+  - The repositories on the page, in the order it lists them: the rank, `owner/name`, the description, the language, total stars, forks and the stars gained today. Click a row to open the repository on GitHub.
 
 ## Requirements
 
@@ -93,6 +96,8 @@ Enable it under Settings. It writes `~/Library/LaunchAgents/local.devhub.plist` 
 
 The Mac tab reads the machine's own state with the tools macOS ships: `pmset -g batt` for the battery, `df` for the disk, `system_profiler` and `defaults` for the displays and Finder and screenshot settings, `lsof` for the port lookup, and `networkQuality` for the speed test. Nothing needs admin rights, nothing leaves the Mac, and no tab needs a token or a sign-in.
 
+The Trending tab is the one that uses the network: it fetches the public `github.com/trending` page and reads it. No sign-in, no token, no personal data sent.
+
 A refresh runs every 60 minutes (15 minutes to 4 hours in Settings), on wake from sleep, when the network comes back, and when you open the panel with data older than 15 minutes. After errors it backs off, doubling the interval up to 4 hours, and it never polls more than once a minute.
 
 ## Adding a tab
@@ -127,6 +132,7 @@ Tests never call a network service. The Mac tab's parsers are tested against mad
 | `Sources/DevHubCore/Shared/` | `Monitor` protocol, badge rule, refresh schedule, tab visibility and groups, formatting, `--dump` encoding |
 | `Sources/DevHubCore/Notifications/` | Last-seen state, per-tab diff, reminders and banner text |
 | `Sources/DevHubCore/Utilities/` | Caffeinate, Pomodoro, displays and brightness, port lookup, screenshot settings, machine state, network speed, dev cache cleanup |
+| `Sources/DevHubCore/Trending/` | GitHub trending page: the monitor, the HTML parser and the repositories |
 | `Sources/DevHubCore/Notch/` | Notch geometry, activity feed, full-screen detection |
 | `Sources/DevHub/` | AppKit app: notch, menu bar menu, tab registry, store, panel and settings, notifications, `--dump`, `--render` |
 | `Tests/DevHubTests/` | Unit tests |

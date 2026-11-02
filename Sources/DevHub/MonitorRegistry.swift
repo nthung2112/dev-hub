@@ -7,6 +7,7 @@ import DevHubCore
 enum MonitorRegistry {
     static let tabs: [MonitorTab] = [
         MonitorTab(make: { UtilitiesMonitor(defaults: $0) }, content: { UtilitiesView(tab: $0) }),
+        MonitorTab(make: { TrendingMonitor(defaults: $0) }, content: { TrendingView(tab: $0) }),
     ]
 
     /// Tabs that share one strip entry. Each member still refreshes, reports and has settings on its own.

@@ -62,7 +62,7 @@ Usage: devhub [command]
   restart        Quit and launch again
   status         Show whether it is running
   install        Rebuild from $REPO, reinstall, and launch
-  dump [tab]     Print the tabs' snapshots as JSON (tabs: utilities; all by default)
+  dump [tab]     Print the tabs' snapshots as JSON (tabs: utilities, trending; all by default)
 EOF
     ;;
   *)
